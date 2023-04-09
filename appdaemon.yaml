@@ -1,0 +1,10 @@
+app_config:
+  fortigate_dhcp_lease_monitoring:
+    module: your_module_name
+    class: FortigateDHCPLeaseMonitoring
+    fortigate_base_url: https://your-fortigate-url
+    api_key: your-fortigate-api-key
+    mysql_host: your-mysql-host
+    mysql_user: your-mysql-user
+    mysql_password: your-mysql-password
+    mysql_database: your-mysql-database
