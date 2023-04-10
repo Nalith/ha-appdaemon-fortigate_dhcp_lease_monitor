@@ -22,7 +22,7 @@ class FortigateDHCPLeaseMonitoring(hass.Hass):
         requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
         # Schedule the update to run every 10 minutes
-        self.run_every(self.update_dhcp_leases, "now", 10 * 15)
+        self.run_every(self.update_dhcp_leases, "now", 1 * 60)
 
     # Update DHCP leases every 10 minutes
     def update_dhcp_leases(self, kwargs):
@@ -47,7 +47,7 @@ class FortigateDHCPLeaseMonitoring(hass.Hass):
                         mac_address = lease['mac'] if 'mac' in lease else 'N/A'
                         interface = lease['interface'] if 'interface' in lease else 'N/A'
                         first_seen = time.strftime('%Y-%m-%d %H:%M:%S')
-                        self.insert_dhcp_lease(connection, hostname, mac_address, interface, first_seen)
+                        self.insert_dhcp_lease(connection, hostname, mac_address, interface)
 
                 recent_dhcp_leases = self.get_recent_dhcp_leases(connection)
 
@@ -92,18 +92,21 @@ class FortigateDHCPLeaseMonitoring(hass.Hass):
         connection.commit()
 
     # Insert a DHCP lease into the database
-    def insert_dhcp_lease(self, connection, hostname, mac_address, interface, first_seen):
+    def insert_dhcp_lease(self, connection, hostname, mac_address, interface):
         cursor = connection.cursor()
         insert_query = '''
         INSERT INTO dhcp_leases (hostname, mac_address, interface, first_seen, last_seen)
         VALUES (%s, %s, %s, %s, %s)
         ON DUPLICATE KEY UPDATE
             hostname = VALUES(hostname),
-            last_seen = VALUES(last_seen);
+            last_seen = VALUES(last_seen),
+            first_seen = IF(first_seen IS NULL, VALUES(first_seen), first_seen);
         '''
-        last_seen = time.strftime('%Y-%m-%d %H:%M:%S')
-        cursor.execute(insert_query, (hostname, mac_address, interface, first_seen, last_seen))
+        current_time = time.strftime('%Y-%m-%d %H:%M:%S')
+        cursor.execute(insert_query, (hostname, mac_address, interface, current_time, current_time))
         connection.commit()
+
+
 
     # Get recent DHCP leases from the last 7 days
     def get_recent_dhcp_leases(self, connection):
@@ -115,3 +118,4 @@ class FortigateDHCPLeaseMonitoring(hass.Hass):
         '''
         cursor.execute(select_query)
         return cursor.fetchall()
+
