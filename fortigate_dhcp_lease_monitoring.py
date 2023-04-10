@@ -84,6 +84,7 @@ class FortigateDHCPLeaseMonitoring(hass.Hass):
             mac_address VARCHAR(17) NOT NULL,
             interface VARCHAR(255) NOT NULL,
             first_seen TIMESTAMP NOT NULL,
+            last_seen TIMESTAMP NOT NULL,
             UNIQUE (mac_address, interface)
         );
         '''
@@ -94,10 +95,14 @@ class FortigateDHCPLeaseMonitoring(hass.Hass):
     def insert_dhcp_lease(self, connection, hostname, mac_address, interface, first_seen):
         cursor = connection.cursor()
         insert_query = '''
-        INSERT IGNORE INTO dhcp_leases (hostname, mac_address, interface, first_seen)
-        VALUES (%s, %s, %s, %s);
+        INSERT INTO dhcp_leases (hostname, mac_address, interface, first_seen, last_seen)
+        VALUES (%s, %s, %s, %s, %s)
+        ON DUPLICATE KEY UPDATE
+            hostname = VALUES(hostname),
+            last_seen = VALUES(last_seen);
         '''
-        cursor.execute(insert_query, (hostname, mac_address, interface, first_seen))
+        last_seen = time.strftime('%Y-%m-%d %H:%M:%S')
+        cursor.execute(insert_query, (hostname, mac_address, interface, first_seen, last_seen))
         connection.commit()
 
     # Get recent DHCP leases from the last 7 days
@@ -110,4 +115,3 @@ class FortigateDHCPLeaseMonitoring(hass.Hass):
         '''
         cursor.execute(select_query)
         return cursor.fetchall()
-
