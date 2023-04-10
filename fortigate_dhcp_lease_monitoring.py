@@ -22,7 +22,7 @@ class FortigateDHCPLeaseMonitoring(hass.Hass):
         requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
         # Schedule the update to run every 10 minutes
-        self.run_every(self.update_dhcp_leases, "now", 1 * 60)
+        self.run_every(self.update_dhcp_leases, "now", 10 * 60)
 
     # Update DHCP leases every 10 minutes
     def update_dhcp_leases(self, kwargs):
